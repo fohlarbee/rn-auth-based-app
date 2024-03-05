@@ -1,5 +1,5 @@
 import { NavigationProp, useNavigation } from "@react-navigation/native";
-import { FC, useState } from "react";
+import { FC, useContext, useState } from "react";
 import {
   View,
   StyleSheet,
@@ -10,16 +10,36 @@ import {
 } from "react-native";
 
 import { AuthNavigatorTypes } from "../navigation/AuthNavigator";
+import { signinUrl, signupUrl } from "../url";
+import { AuthContext } from "../context/AuthContext";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface Props {}
+
 
 const SignIn: FC<Props> = (props) => {
   const { navigate } = useNavigation<NavigationProp<AuthNavigatorTypes>>();
   const [userInfo, setUserInfo] = useState({ email: "", password: "" });
+  const {updateAuthState} = useContext(AuthContext);
+
 
   const handleSignin = async () => {
     // TODO: validate your userInfo
-  };
+   const signinRes =  await fetch(signinUrl, {
+      method: 'POST',
+      body:JSON.stringify(userInfo),
+      headers:{
+        "Content-Type": "application/json"
+      }
+    })
+
+    const apiResponse = await signinRes.json() as {profile: {name: string, email: string, role: 'admin' | 'user'}, token: string}
+    
+    updateAuthState({loggedIn:true, profile:apiResponse.profile, busy:true})
+    await AsyncStorage.setItem("auth_token", apiResponse.token);
+
+
+  }
 
   return (
     <View style={styles.container}>
